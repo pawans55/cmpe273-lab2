@@ -42,16 +42,8 @@ Login.prototype.refreshid = function(sessionId) {
         this.sessionMap[newsessionId]= { name: previous_name, email: previous_email};
         delete this.sessionMap[sessionId];
 
-        //var newsessionId = new Date().getTime();
-        //this.sessionMap[newsessionId]= { name: old_name, email: old_email}
-        
-        //console.log('logout::' + sessionId);
-
-        //console.log('new session id '+ newsessionId + ' for login ::' + old_email);
         return newsessionId;
-   /*
-        * TODO: Remove the given sessionId from the sessionMap
-        */
+   
 };
 
 Login.prototype.delete = function(sessionId) {

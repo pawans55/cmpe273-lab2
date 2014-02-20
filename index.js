@@ -32,6 +32,8 @@ function get(request, response) {
                 }
         } else {
                 response.end("Please login via HTTP POST\n");
+
+
         }
 };
 
@@ -59,8 +61,8 @@ function put(request, response) {
         console.log(cookies);
              var newSessionId = login.refreshid(sessionId);       
         response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
-        console.log("PUT:: generate a new ID for the same user");
-                response.end("Re-freshed session id =\n");
+        console.log("generate a new ID for the same user");
+                response.end("Re-freshed session id =  \n");
 };
 
 app.listen(8000);
