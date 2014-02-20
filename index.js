@@ -1,82 +1,68 @@
-function Login() {
-        // sessionId -> user map
-        this.sessionMap = {
-                99999 : { name: 'Foo', email: 'foo@bar.com' }
-        };
-}
-/**
- * Say Hello {name} to the user
- */
-Login.prototype.hello = function(sessionId) {
-        return 'Hello ' + this.sessionMap[sessionId].name + '\n';
+var connect = require('connect');
+var login = require('./login');
+
+var app = connect();
+
+app.use(connect.json()); // Parse JSON request body into `request.body`
+app.use(connect.urlencoded()); // Parse form in request body into `request.body`
+app.use(connect.cookieParser()); // Parse cookies in the request headers into `request.cookies`
+app.use(connect.query()); // Parse query string into `request.query`
+
+app.use('/', main);
+
+function main(request, response, next) {
+        switch (request.method) {
+                case 'GET': get(request, response); break;
+                case 'POST': post(request, response); break;
+                case 'DELETE': del(request, response); break;
+                case 'PUT': put(request, response); break;
+        }
 };
 
-/**
- * Check whether the given session id is valid (is in sessionMap) or not.
- */
-Login.prototype.isLoggedIn = function(sessionId) {
-        return sessionId in this.sessionMap;
+function get(request, response) {
+        var cookies = request.cookies;
+        console.log(cookies);
+        if ('session_id' in cookies) {
+                var sid = cookies['session_id'];
+                if ( login.isLoggedIn(sid) ) {
+                        response.setHeader('Set-Cookie', 'session_id=' + sid);
+                        response.end(login.hello(sid));
+                } else {
+                        response.end("Invalid session_id! Please login again\n");
+                }
+        } else {
+                response.end("Please login via HTTP POST\n");
+        }
 };
 
-/**
- * Create a new session id for the given user.
- */
-Login.prototype.login = function(_name, _email) {
-   /*
-        * Generate unique session id and set it into sessionMap like foo@bar.com
-        */
-        var sessionId = new Date().getTime();
-        this.sessionMap[sessionId] = { name: _name, email: _email }
-
-        console.log('new session id ' + sessionId + ' for login::' + _email);
-
-        return sessionId;
+function post(request, response) {
+        var body = request.body;
+        var name = body['name'];
+        var email = body ['email'];
+        var newSessionId = login.login(name, email);
+        response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
+        response.end(login.hello(newSessionId));
 };
 
-Login.prototype.refreshid = function(sessionId) {
-
-        var newsessionId = new Date().getTime();
-        var previous_name = this.sessionMap[sessionId].name;
-        var previous_email = this.sessionMap[sessionId].email;
-        
-        this.sessionMap[newsessionId]= { name: previous_name, email: previous_email};
-        delete this.sessionMap[sessionId];
-
-        //var newsessionId = new Date().getTime();
-        //this.sessionMap[newsessionId]= { name: old_name, email: old_email}
-        
-        //console.log('logout::' + sessionId);
-
-        //console.log('new session id '+ newsessionId + ' for login ::' + old_email);
-        return newsessionId;
-   /*
-        * TODO: Remove the given sessionId from the sessionMap
-        */
+function del(request, response) {
+        var cookies = request.cookies;
+        console.log("DELETE:Logged out from server");
+        login.logout(cookies['session_id']);
+        // TODO: remove session id via login.logout(xxx)
+        // No need to set session id in the response cookies since you just logged out!
+        response.end('Logged out from the server\n');
 };
 
-Login.prototype.delete = function(sessionId) {
-
-        delete this.sessionMap[sessionId];
-
-
-        console.log('logout::' + sessionId);
-   /*
-        * TODO: Remove the given sessionId from the sessionMap
-        */
+function put(request, response) {
+        var cookies = request.cookies;
+        var sessionId = cookies['session_id'];
+        console.log(cookies);
+             var newSessionId = login.refreshid(sessionId);       
+        response.setHeader('Set-Cookie', 'session_id=' + newSessionId);
+        console.log("PUT:: generate a new ID for the same user");
+                response.end("Re-freshed session id =\n");
 };
 
-/**
- * Logout from the server
- */
-Login.prototype.logout = function(sessionId) {
+app.listen(8000);
 
-        delete this.sessionMap[sessionId];
-
-        console.log('logout::' + sessionId);
-   /*
-        * TODO: Remove the given sessionId from the sessionMap
-        */
-};
-
-// Export the Login class
-module.exports = new Login();
+console.log("Node.JS server running at 8000...");
